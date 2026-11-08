@@ -71,6 +71,10 @@ public class SecurityConfig {
     }
 
     private Mono<Void> writeSecurityError(ServerWebExchange exchange, HttpStatus status, String code, String message) {
+        if (exchange == null) {
+            return Mono.empty();
+        }
+
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
@@ -79,7 +83,7 @@ public class SecurityConfig {
 
         String traceId = (tracer != null && tracer.currentSpan() != null && tracer.currentSpan().context() != null)
                 ? tracer.currentSpan().context().traceId()
-                : (exchange != null && exchange.getAttribute(TraceIdWebFilter.TRACE_ID_ATTRIBUTE) != null)
+                : (exchange.getAttribute(TraceIdWebFilter.TRACE_ID_ATTRIBUTE) != null)
                     ? exchange.getAttribute(TraceIdWebFilter.TRACE_ID_ATTRIBUTE).toString()
                     : "N/A";
 
