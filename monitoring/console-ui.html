@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observability & Monitoring Console | Spring Boot Reactive IAM</title>
+  <style>
+    :root {
+      --bg-primary: #0f141c;
+      --bg-secondary: #171d27;
+      --bg-tertiary: #202938;
+      --border-color: #2b3548;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --color-primary: #38bdf8;
+      --color-success: #22c55e;
+      --color-warn: #eab308;
+      --color-error: #ef4444;
+      --color-accent: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .badge-service {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--color-primary);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .quick-links {
+      display: flex;
+      gap: 10px;
+    }
+    .link-btn {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .link-btn:hover {
+      background: var(--color-primary);
+      color: #000;
+      border-color: var(--color-primary);
+    }
+
+    /* Tabs */
+    .tab-bar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      padding: 0 24px;
+      gap: 20px;
+    }
+    .tab-item {
+      padding: 12px 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-item:hover { color: var(--text-main); }
+    .tab-item.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px 24px;
+      gap: 16px;
+    }
+
+    /* Metrics Strip */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .metric-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Content Area */
+    .content-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .box-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.01);
+    }
+    .search-filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .search-input {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      width: 280px;
+    }
+    .filter-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    /* Console Terminal Log Stream */
+    .terminal-stream {
+      flex: 1;
+      background: #090d13;
+      padding: 12px 16px;
+      font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .log-line {
+      display: flex;
+      gap: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .log-line:hover { background: #131b27; }
+    .log-time { color: #64748b; min-width: 85px; }
+    .log-level {
+      font-weight: 700;
+      min-width: 45px;
+      text-align: center;
+      border-radius: 3px;
+      padding: 0 4px;
+      font-size: 11px;
+    }
+    .log-level.ERROR { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .log-level.WARN  { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+    .log-level.INFO  { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .log-trace {
+      background: #1e293b;
+      color: #38bdf8;
+      padding: 0 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .log-trace:hover { text-decoration: underline; }
+    .log-code {
+      color: #c084fc;
+      font-weight: 600;
+      background: rgba(192, 132, 252, 0.15);
+      padding: 0 6px;
+      border-radius: 3px;
+    }
+    .log-msg { color: #cbd5e1; flex: 1; word-break: break-all; }
+
+    /* Trace Details Panel */
+    .trace-view {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100%;
+      overflow: hidden;
+    }
+    .trace-list {
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .trace-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .trace-item:hover, .trace-item.active { background: var(--bg-tertiary); }
+    .trace-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .trace-item-title {
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trace-detail {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .waterfall-bar {
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-left: 4px solid var(--color-error);
+    }
+    .waterfall-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .waterfall-line {
+      height: 8px;
+      background: rgba(239, 68, 68, 0.4);
+      border-radius: 4px;
+      width: 100%;
+      position: relative;
+    }
+    .stack-trace-box {
+      background: #090d13;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #f87171;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 220px;
+    }
+    .tag-pill {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header>
+    <div class="brand">
+      <span style="font-size: 20px;">⚡</span>
+      <h1>Observability & Error Console</h1>
+      <span class="badge-service">iam-service (Reactive WebFlux)</span>
+    </div>
+    <div class="quick-links">
+      <a href="http://localhost:9411" target="_blank" class="link-btn">🔍 Zipkin Tracing (:9411)</a>
+      <a href="http://localhost:3000" target="_blank" class="link-btn">📊 Grafana (:3000)</a>
+      <a href="http://localhost:9090" target="_blank" class="link-btn">📈 Prometheus (:9090)</a>
+      <a href="http://localhost:8085" target="_blank" class="link-btn">📬 Kafka-UI (:8085)</a>
+      <a href="http://localhost:8080/swagger-ui.html" target="_blank" class="link-btn">📖 Swagger UI (:8080)</a>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('logs')">Live Log Console</div>
+    <div class="tab-item" onclick="switchTab('traces')">Distributed Traces & Waterfall (Zipkin)</div>
+    <div class="tab-item" onclick="switchTab('metrics')">Metrics & Error Rates (Prometheus)</div>
+    <div class="tab-item" onclick="switchTab('postman')">Postman Test Payloads</div>
+  </div>
+
+  <!-- Main Body -->
+  <main>
+    <!-- Top KPI Strip -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-title">Active Trace Correlation</span>
+        <div class="metric-value" style="color: var(--color-primary)">100%</div>
+        <span class="metric-sub">Micrometer Brave + Reactor Context</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">Errors by Custom Code</span>
+        <div class="metric-value" style="color: var(--color-warn)">3 Active</div>
+        <span class="metric-sub">AUTH-000101, AUTH-000104, AUTH-000500</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">Prometheus Metric</span>
+        <div class="metric-value" style="color: var(--color-success)">auth_errors_total</div>
+        <span class="metric-sub">Labeled by [code] & [status]</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">Security Filter Exceptions</span>
+        <div class="metric-value" style="color: var(--color-accent)">401 / 403</div>
+        <span class="metric-sub">Captured with traceId in SecurityConfig</span>
+      </div>
+    </div>
+
+    <!-- Tab 1: Live Log Console -->
+    <div id="tab-logs" class="content-box">
+      <div class="box-header">
+        <div class="search-filter">
+          <input type="text" id="logSearch" class="search-input" placeholder="Search traceId, errorCode, or message..." onkeyup="filterLogs()">
+          <button class="filter-btn active" onclick="filterByLevel('ALL')">All</button>
+          <button class="filter-btn" onclick="filterByLevel('ERROR')">ERROR</button>
+          <button class="filter-btn" onclick="filterByLevel('WARN')">WARN</button>
+          <button class="filter-btn" onclick="filterByCode('AUTH-000104')">AUTH-000104</button>
+          <button class="filter-btn" onclick="filterByCode('AUTH-000101')">AUTH-000101</button>
+          <button class="filter-btn" onclick="filterByCode('AUTH-000500')">AUTH-000500</button>
+        </div>
+        <span style="font-size: 11px; color: var(--text-muted);">🟢 Live Tail: Auto-refreshing</span>
+      </div>
+
+      <div class="terminal-stream" id="logTerminal">
+        <!-- Log Lines -->
+        <div class="log-line" data-level="INFO">
+          <span class="log-time">19:27:10.104</span>
+          <span class="log-level INFO">INFO</span>
+          <span class="log-trace">traceId=initialization</span>
+          <span class="log-msg">Hooks.enableAutomaticContextPropagation() activated for Reactor WebFlux</span>
+        </div>
+        <div class="log-line" data-level="WARN" data-code="AUTH-000101">
+          <span class="log-time">19:27:14.281</span>
+          <span class="log-level WARN">WARN</span>
+          <span class="log-trace" onclick="selectTrace('4bf92f3577b34da6a3ce929d0e0e4736')">traceId=4bf92f3577b34da6a3ce929d0e0e4736</span>
+          <span class="log-code">AUTH-000101</span>
+          <span class="log-msg">Bad request input validation error: 400 BAD_REQUEST "Missing required parameter: email"</span>
+        </div>
+        <div class="log-line" data-level="WARN" data-code="AUTH-000104">
+          <span class="log-time">19:27:15.892</span>
+          <span class="log-level WARN">WARN</span>
+          <span class="log-trace" onclick="selectTrace('8f1e29c0b7414df6b8a2185c723a1002')">traceId=8f1e29c0b7414df6b8a2185c723a1002</span>
+          <span class="log-code">AUTH-000104</span>
+          <span class="log-msg">Client error: [AUTH-000104] Invalid username or password authentication attempt</span>
+        </div>
+        <div class="log-line" data-level="ERROR" data-code="AUTH-000500">
+          <span class="log-time">19:27:16.665</span>
+          <span class="log-level ERROR">ERROR</span>
+          <span class="log-trace" onclick="selectTrace('e3a7b521c90048aa92fb1427c5980145')">traceId=e3a7b521c90048aa92fb1427c5980145</span>
+          <span class="log-code">AUTH-000500</span>
+          <span class="log-msg">Unhandled internal server exception: java.lang.RuntimeException: Database connection timeout</span>
+        </div>
+        <div class="log-line" data-level="WARN" data-code="AUTH-000401">
+          <span class="log-time">19:27:18.012</span>
+          <span class="log-level WARN">WARN</span>
+          <span class="log-trace" onclick="selectTrace('1c0993fe81544a19b84a9235d64801fe')">traceId=1c0993fe81544a19b84a9235d64801fe</span>
+          <span class="log-code">AUTH-000401</span>
+          <span class="log-msg">SecurityWebFilterChain: Unauthorized access attempt to /api/users/bulk without Bearer token</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Traces & Waterfall -->
+    <div id="tab-traces" class="content-box" style="display: none;">
+      <div class="trace-view">
+        <div class="trace-list">
+          <div class="trace-item active" onclick="showTraceDetails('AUTH-000104')">
+            <div class="trace-item-header">
+              <span>POST /auths/login</span>
+              <span style="color: var(--color-error)">400 BAD_REQUEST</span>
+            </div>
+            <div class="trace-item-title">
+              <span style="color: var(--color-primary)">8f1e29c0b741...</span>
+              <span class="log-code">AUTH-000104</span>
+            </div>
+            <div class="trace-item-header" style="margin-top: 6px;">
+              <span>Latency: 42ms</span>
+              <span>Spans: 5</span>
+            </div>
+          </div>
+
+          <div class="trace-item" onclick="showTraceDetails('AUTH-000500')">
+            <div class="trace-item-header">
+              <span>GET /users?userId=99</span>
+              <span style="color: var(--color-error)">500 SERVER_ERROR</span>
+            </div>
+            <div class="trace-item-title">
+              <span style="color: var(--color-primary)">e3a7b521c900...</span>
+              <span class="log-code">AUTH-000500</span>
+            </div>
+            <div class="trace-item-header" style="margin-top: 6px;">
+              <span>Latency: 2018ms</span>
+              <span>Spans: 4</span>
+            </div>
+          </div>
+
+          <div class="trace-item" onclick="showTraceDetails('AUTH-000401')">
+            <div class="trace-item-header">
+              <span>POST /api/users/bulk</span>
+              <span style="color: var(--color-warn)">401 UNAUTHORIZED</span>
+            </div>
+            <div class="trace-item-title">
+              <span style="color: var(--color-primary)">1c0993fe8154...</span>
+              <span class="log-code">AUTH-000401</span>
+            </div>
+            <div class="trace-item-header" style="margin-top: 6px;">
+              <span>Latency: 3ms</span>
+              <span>Spans: 2</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="trace-detail" id="traceDetailPanel">
+          <div>
+            <h3>Trace: <span id="currentTraceId" style="color: var(--color-primary)">8f1e29c0b7414df6b8a2185c723a1002</span></h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Service: <b>springboot-reactive-iam-service</b> | Method: <b>POST /auths/login</b></p>
+          </div>
+
+          <div>
+            <span class="tag-pill">error.code: AUTH-000104</span>
+            <span class="tag-pill">error.status: 400</span>
+            <span class="tag-pill">http.status_code: 400</span>
+            <span class="tag-pill">http.method: POST</span>
+            <span class="tag-pill">thread: reactor-tcp-nio-2</span>
+          </div>
+
+          <!-- Waterfall timeline -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="waterfall-bar">
+              <div class="waterfall-header">
+                <span>1. Netty WebFlux Ingress Pipeline</span>
+                <span>0ms - 42ms (42ms)</span>
+              </div>
+              <div class="waterfall-line"></div>
+            </div>
+            <div class="waterfall-bar" style="margin-left: 20px;">
+              <div class="waterfall-header">
+                <span>2. JwtAuthenticationWebFilter</span>
+                <span>1ms - 3ms (2ms)</span>
+              </div>
+              <div class="waterfall-line" style="width: 10%;"></div>
+            </div>
+            <div class="waterfall-bar" style="margin-left: 40px;">
+              <div class="waterfall-header">
+                <span>3. R2DBC PostgreSQL: findByUsername('alice')</span>
+                <span>4ms - 22ms (18ms)</span>
+              </div>
+              <div class="waterfall-line" style="width: 45%;"></div>
+            </div>
+            <div class="waterfall-bar" style="margin-left: 40px; border-left-color: #ef4444;">
+              <div class="waterfall-header">
+                <span>4. BCryptPasswordEncoder.matches() -> Mismatch</span>
+                <span>23ms - 41ms (18ms) [FAILED]</span>
+              </div>
+              <div class="waterfall-line" style="background: #ef4444; width: 45%;"></div>
+            </div>
+            <div class="waterfall-bar" style="margin-left: 20px;">
+              <div class="waterfall-header">
+                <span>5. GlobalExceptionHandler.handleCustomException()</span>
+                <span>41ms - 42ms (1ms)</span>
+              </div>
+              <div class="waterfall-line" style="width: 5%;"></div>
+            </div>
+          </div>
+
+          <!-- Stacktrace Box -->
+          <div>
+            <h4 style="font-size: 12px; margin-bottom: 6px; color: var(--text-muted)">Exception & Stack Trace</h4>
+            <div class="stack-trace-box" id="stackTraceContent">
+com.example.springbootbasiclogin.exception.CustomException: [AUTH-000104] Invalid username or password authentication attempt.
+    at com.example.springbootbasiclogin.service.auth.AuthServiceImpl.lambda$loginUser$2(AuthServiceImpl.java:68)
+    at reactor.core.publisher.MonoDefer.subscribe(MonoDefer.java:45)
+    at reactor.core.publisher.MonoFlatMap$FlatMapMain.onNext(MonoFlatMap.java:158)
+    at reactor.core.publisher.FluxMap$MapSubscriber.onNext(FluxMap.java:122)
+    at io.r2dbc.postgresql.PostgresqlResult.lambda$map$0(PostgresqlResult.java:45)
+    at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)
+    at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+    at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)
+    at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)
+    at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Metrics & PromQL -->
+    <div id="tab-metrics" class="content-box" style="display: none; padding: 20px; overflow-y: auto;">
+      <h3 style="margin-bottom: 12px;">📊 Prometheus Observability Metric: <code>auth_errors_total</code></h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+        Exposed at <code>http://localhost:8080/actuator/prometheus</code> and automatically scraped every 5s by Prometheus.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+        <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px;">
+          <h4 style="font-size: 13px; color: var(--color-primary); margin-bottom: 8px;">PromQL: Error Rate by Business Code</h4>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #38bdf8;">sum by (code) (rate(auth_errors_total[5m]))</pre>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Generates time-series line chart in Grafana displaying error frequency per custom code.</p>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px;">
+          <h4 style="font-size: 13px; color: var(--color-warn); margin-bottom: 8px;">PromQL: Top 5 Failing Error Codes</h4>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #fde047;">topk(5, sum by (code) (auth_errors_total))</pre>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Used for Grafana Pie Chart / Donut Chart of error distributions.</p>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px;">
+          <h4 style="font-size: 13px; color: var(--color-error); margin-bottom: 8px;">PromQL: Alert Rule for 500 Spikes</h4>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #f87171;">sum(rate(auth_errors_total{code="AUTH-000500"}[1m])) > 5</pre>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Fires alert to Slack/PagerDuty whenever internal server errors spike.</p>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px;">
+          <h4 style="font-size: 13px; color: var(--color-accent); margin-bottom: 8px;">Loki Query: Filter Logs by Error Code</h4>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #c084fc;">{app="iam-service"} |= "AUTH-000104"</pre>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Instantly finds all log lines matching this error code across all pods/instances.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Postman Payloads -->
+    <div id="tab-postman" class="content-box" style="display: none; padding: 20px; overflow-y: auto;">
+      <h3 style="margin-bottom: 12px;">📮 Failed Request Smoke Test Payloads</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Use these commands in terminal or Postman to generate errors and verify them in this console:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: var(--bg-tertiary); padding: 14px; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <b>1. Missing Parameters (AUTH-000101 -> 400 Bad Request)</b>
+            <span class="log-code">AUTH-000101</span>
+          </div>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #38bdf8;">curl -X POST http://localhost:8080/auths/login -H "Content-Type: application/json" -d "{}"</pre>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 14px; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <b>2. Bad Password / Invalid Credentials (AUTH-000104 -> 400 Bad Request)</b>
+            <span class="log-code">AUTH-000104</span>
+          </div>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #38bdf8;">curl -X POST http://localhost:8080/auths/login -H "Content-Type: application/json" -d '{"username":"admin","password":"WRONG_PASSWORD"}'</pre>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 14px; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <b>3. Unauthorized Endpoint Access (AUTH-000401 -> 401 Unauthorized)</b>
+            <span class="log-code">AUTH-000401</span>
+          </div>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #38bdf8;">curl -X GET http://localhost:8080/users?userId=1</pre>
+        </div>
+
+        <div style="background: var(--bg-tertiary); padding: 14px; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <b>4. Check Prometheus Scrape for auth_errors_total</b>
+            <span class="badge-service">METRICS</span>
+          </div>
+          <pre style="background: #090d13; padding: 10px; border-radius: 4px; font-size: 12px; color: #4ade80;">curl http://localhost:8080/actuator/prometheus | grep "auth_errors_total"</pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.content-box').forEach(el => el.style.display = 'none');
+
+      if (tab === 'logs') {
+        document.querySelector('.tab-item:nth-child(1)').classList.add('active');
+        document.getElementById('tab-logs').style.display = 'flex';
+      } else if (tab === 'traces') {
+        document.querySelector('.tab-item:nth-child(2)').classList.add('active');
+        document.getElementById('tab-traces').style.display = 'flex';
+      } else if (tab === 'metrics') {
+        document.querySelector('.tab-item:nth-child(3)').classList.add('active');
+        document.getElementById('tab-metrics').style.display = 'block';
+      } else if (tab === 'postman') {
+        document.querySelector('.tab-item:nth-child(4)').classList.add('active');
+        document.getElementById('tab-postman').style.display = 'block';
+      }
+    }
+
+    function filterByLevel(level) {
+      const lines = document.querySelectorAll('.log-line');
+      lines.forEach(l => {
+        if (level === 'ALL' || l.getAttribute('data-level') === level) {
+          l.style.display = 'flex';
+        } else {
+          l.style.display = 'none';
+        }
+      });
+    }
+
+    function filterByCode(code) {
+      const lines = document.querySelectorAll('.log-line');
+      lines.forEach(l => {
+        if (l.getAttribute('data-code') === code) {
+          l.style.display = 'flex';
+        } else {
+          l.style.display = 'none';
+        }
+      });
+    }
+
+    function filterLogs() {
+      const q = document.getElementById('logSearch').value.toLowerCase();
+      const lines = document.querySelectorAll('.log-line');
+      lines.forEach(l => {
+        if (l.innerText.toLowerCase().includes(q)) {
+          l.style.display = 'flex';
+        } else {
+          l.style.display = 'none';
+        }
+      });
+    }
+
+    function selectTrace(traceId) {
+      switchTab('traces');
+      document.getElementById('currentTraceId').innerText = traceId;
+    }
+
+    function showTraceDetails(code) {
+      if (code === 'AUTH-000104') {
+        document.getElementById('currentTraceId').innerText = '8f1e29c0b7414df6b8a2185c723a1002';
+        document.getElementById('stackTraceContent').innerText = `com.example.springbootbasiclogin.exception.CustomException: [AUTH-000104] Invalid username or password authentication attempt.
+    at com.example.springbootbasiclogin.service.auth.AuthServiceImpl.lambda$loginUser$2(AuthServiceImpl.java:68)
+    at reactor.core.publisher.MonoDefer.subscribe(MonoDefer.java:45)
+    at reactor.core.publisher.MonoFlatMap$FlatMapMain.onNext(MonoFlatMap.java:158)
+    at reactor.core.publisher.FluxMap$MapSubscriber.onNext(FluxMap.java:122)
+    at io.r2dbc.postgresql.PostgresqlResult.lambda$map$0(PostgresqlResult.java:45)`;
+      } else if (code === 'AUTH-000500') {
+        document.getElementById('currentTraceId').innerText = 'e3a7b521c90048aa92fb1427c5980145';
+        document.getElementById('stackTraceContent').innerText = `java.lang.RuntimeException: Database connection timeout
+    at com.example.springbootbasiclogin.service.user.UserServiceImpl.getUserById(UserServiceImpl.java:82)
+    at reactor.core.publisher.MonoFlatMap$FlatMapMain.onError(MonoFlatMap.java:200)
+    at io.r2dbc.pool.ConnectionPool.lambda$warmup$2(ConnectionPool.java:188)
+    at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)`;
+      } else if (code === 'AUTH-000401') {
+        document.getElementById('currentTraceId').innerText = '1c0993fe81544a19b84a9235d64801fe';
+        document.getElementById('stackTraceContent').innerText = `org.springframework.security.authentication.AuthenticationCredentialsNotFoundException: An Authentication object was not found in the SecurityContext
+    at org.springframework.security.web.server.authorization.AuthorizationWebFilter.filter(AuthorizationWebFilter.java:54)
+    at com.example.springbootbasiclogin.config.SecurityConfig.lambda$securityWebFilterChain$3(SecurityConfig.java:101)`;
+      }
+    }
+  </script>
+</body>
+</html>
+

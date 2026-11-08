@@ -58,18 +58,41 @@ Automated database maintenance and cleanup tasks are managed via **Kubernetes Cr
 
 ## 🐳 Local Development Infrastructure
 
-Start the full development stack including PostgreSQL, Redis, FusionAuth, MailDev, Apache Kafka, and Kafka-UI:
+Start the full development and observability stack including PostgreSQL, Redis, FusionAuth, MailDev, Apache Kafka, Kafka-UI, Prometheus, Zipkin, and Grafana:
 
 ```powershell
 docker compose up -d
 ```
 
-- **PostgreSQL**: `localhost:5432`
-- **Redis**: `localhost:6379`
-- **MailDev UI**: [http://localhost:1080](http://localhost:1080)
-- **FusionAuth**: [http://localhost:9011](http://localhost:9011)
-- **Apache Kafka Broker**: `localhost:9092`
-- **Kafka-UI Console**: [http://localhost:8085](http://localhost:8085)
+### 🌐 Localhost Port Reference Table
+
+| Service / Tool | Localhost URL / Port | Credentials / Notes | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Spring Boot Application** | [http://localhost:8080](http://localhost:8080) | — | Reactive WebFlux IAM Microservice |
+| **Swagger UI** | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) | — | Interactive OpenAPI Documentation |
+| **Actuator Metrics** | [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus) | — | Prometheus Metrics Scrape Endpoint |
+| **Grafana Dashboard** | [http://localhost:3000/d/iam-service-observability/iam-service-observability-and-errors](http://localhost:3000/d/iam-service-observability/iam-service-observability-and-errors) | `admin` / `admin` | Pre-built IAM Observability & Error Dashboard |
+| **Zipkin Trace Console** | [http://localhost:9411/zipkin/?annotationQuery=error](http://localhost:9411/zipkin/?annotationQuery=error) | — | Trace & Error Code (`error.code`, `AUTH-XXXXXX`) Flamegraphs |
+| **Prometheus Console** | [http://localhost:9090/graph?g0.expr=auth_errors_total&g0.tab=0](http://localhost:9090/graph?g0.expr=auth_errors_total&g0.tab=0) | — | Live Error Metric Counter & PromQL Engine |
+| **Dozzle Container Logs** | [http://localhost:8888](http://localhost:8888) | — | Real-time Web Log Viewer for all Docker Containers |
+| **Kafka-UI Console** | [http://localhost:8085](http://localhost:8085) | — | Kafka Topics & Bulk Job Consumer Monitor |
+| **MailDev Web UI** | [http://localhost:1080](http://localhost:1080) | SMTP: `1025` | Mock Email Inbox for OTP Verification Emails |
+| **FusionAuth Admin** | [http://localhost:9011](http://localhost:9011) | Set on initial setup | OAuth2 / OIDC Federated Identity Provider |
+| **PostgreSQL Database** | `localhost:5432` | User: `postgres`, DB: `security_assignment` | Relational Persistence (R2DBC / Flyway) |
+| **Redis Cache** | `localhost:6379` | Auth pass in `.env` | Reactive In-Memory Store (OTPs / Tokens) |
+| **Apache Kafka Broker** | `localhost:9092` | Internal: `29092` | Event-driven Messaging for Bulk Jobs |
+
+### 🔍 Error Monitoring Quick Search
+
+| Search Target | Tool | How to Search / Direct Link |
+| :--- | :--- | :--- |
+| **By Trace ID** (`traceId`) | **Zipkin** | Direct URL: `http://localhost:9411/zipkin/traces/<traceId>` (views timing flamegraph & stack trace) |
+| **By Error Code** (`AUTH-XXXXXX`) | **Zipkin** | [http://localhost:9411/zipkin/?annotationQuery=error.code%3DAUTH-000101](http://localhost:9411/zipkin/?annotationQuery=error.code%3DAUTH-000101) *(Click **RUN QUERY**)* |
+| **All Error Traces** | **Zipkin** | [http://localhost:9411/zipkin/?annotationQuery=error](http://localhost:9411/zipkin/?annotationQuery=error) *(Click **RUN QUERY**)* |
+| **Error Metrics & Charts** | **Grafana** | [IAM Service Dashboard](http://localhost:3000/d/iam-service-observability/iam-service-observability-and-errors) *(cumulative errors, donut distribution, total counters)* |
+| **Error Counters (PromQL)** | **Prometheus** | [auth_errors_total Graph](http://localhost:9090/graph?g0.expr=auth_errors_total&g0.tab=0) *(scraped every 5s from `/actuator/prometheus`)* |
+| **Live App & Error Logs** | **Dozzle** | [http://localhost:8888](http://localhost:8888) &rarr; select **`my_iam_service`** for live container console logs |
+
 
 ---
 
