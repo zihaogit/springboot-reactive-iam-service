@@ -14,6 +14,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@SuppressWarnings("unchecked")
 public class ErrorResponse extends BaseResponse<Object> {
 
     @Data

@@ -1130,6 +1130,110 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Monitoring & Error Smoke Tests",
+      "item": [
+        {
+          "name": "1. Parameter Validation Error (AUTH-000101 -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auths/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auths",
+                "login"
+              ]
+            },
+            "description": "Trigger AUTH-000101 by submitting empty body to login. Expect 400 with traceId and resultCode."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Invalid Credentials / Password (AUTH-000104 -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"WRONG_PASSWORD_XYZ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auths/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auths",
+                "login"
+              ]
+            },
+            "description": "Trigger AUTH-000104 by submitting wrong password. Expect 400 with traceId."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Unauthorized Access Missing Token (AUTH-000401 -> 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?userId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Trigger AUTH-000401 by calling protected /users without Authorization header."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Actuator Prometheus Error Metric (auth_errors_total)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/prometheus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "prometheus"
+              ]
+            },
+            "description": "Scrape Prometheus metrics endpoint to verify auth_errors_total counter incremented."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

@@ -14,6 +14,10 @@ spec:
     metadata:
       labels:
         app: springboot-iam-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: iam-microservice
@@ -32,6 +36,8 @@ spec:
               value: "kafka"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka.default.svc.cluster.local:9092"
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              value: "http://zipkin.default.svc.cluster.local:9411/api/v2/spans"
           resources:
             requests:
               cpu: 250m
@@ -40,14 +46,16 @@ spec:
               cpu: 1000m
               memory: 1024Mi
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/readiness
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/liveness
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 15
